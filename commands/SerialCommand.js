@@ -471,23 +471,23 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 			if (!device) {
 				return self.error('No serial port identified');
 			}
-
-			inquirer.prompt([
-				{
-					type: 'confirm',
-					name: 'scan',
-					message: chalk.bold.white('Should I scan for nearby Wi-Fi networks?'),
-					default: true
-				}
-			], function(ans) {
-				if (ans.scan) {
-					return self._scanNetworks(function (networks) {
-						self._getWifiInformation(device, networks).then(wifi.resolve, wifi.reject);
-					});
-				} else {
-					self._getWifiInformation(device).then(wifi.resolve, wifi.reject);
-				}
-			});
+			self._getWifiInformation(device).then(wifi.resolve, wifi.reject);
+			// inquirer.prompt([
+			// 	{
+			// 		type: 'confirm',
+			// 		name: 'scan',
+			// 		message: chalk.bold.white('Should I scan for nearby Wi-Fi networks?'),
+			// 		default: true
+			// 	}
+			// ], function(ans) {
+			// 	if (ans.scan) {
+			// 		return self._scanNetworks(function (networks) {
+			// 			self._getWifiInformation(device, networks).then(wifi.resolve, wifi.reject);
+			// 		});
+			// 	} else {
+			// 		self._getWifiInformation(device).then(wifi.resolve, wifi.reject);
+			// 	}
+			// });
 		});
 
 		return wifi.promise;
@@ -590,7 +590,7 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 
 		if (timeout) {
 			failTimer = setTimeout(function () {
-				if (showTraffic) {
+				if (true) {
 					console.log('timed out on ' + prompt);
 				}
 				if (alwaysResolve) {
@@ -606,7 +606,7 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 			var onMessage = function (data) {
 				data = data.toString();
 
-				if (showTraffic) {
+				if (true) {
 					console.log('Serial said: ' + data);
 				}
 				if (data && data.indexOf(prompt) >= 0) {
@@ -614,7 +614,7 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 						serialPort.flush(function() {});
 
 						writeAndDrain(answer, function () {
-							if (showTraffic) {
+							if (true) {
 								console.log('I said: ' + answer);
 							}
 							//serialPort.pause();     //lets not miss anything
@@ -635,7 +635,7 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 		} else if (answer) {
 			clearTimeout(failTimer);
 
-			if (showTraffic) {
+			if (true) {
 				console.log('I said: ' + answer);
 			}
 			writeAndDrain(answer, function () {
@@ -686,24 +686,25 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 			if (ssid) {
 				return cb(ssid + '\n');
 			}
-
-			inquirer.prompt([{
-				type: 'input',
-				name: 'ssid',
-				message: 'SSID',
-				validate: function(input) {
-					if (!input || !input.trim()) {
-						return 'Please enter a valid SSID';
-					} else {
-						return true;
-					}
-				},
-				filter: function(input) {
-					return input.trim();
-				}
-			}], function(ans) {
-				cb(ans.ssid + '\n', startTimeout.bind(self, 5000));
-			});
+			console.log('ssid: '+settings.wifi_ssid);
+			cb(settings.wifi_ssid + '\n', startTimeout.bind(self, 5000));
+			//inquirer.prompt([{
+			// 	type: 'input',
+			// 	name: 'ssid',
+			// 	message: 'SSID',
+			// 	validate: function(input) {
+			// 		if (!input || !input.trim()) {
+			// 			return 'Please enter a valid SSID';
+			// 		} else {
+			// 			return true;
+			// 		}
+			// 	},
+			// 	filter: function(input) {
+			// 		return input.trim();
+			// 	}
+			// }], function(ans) {
+			// 	cb(ans.ssid + '\n', startTimeout.bind(self, 5000));
+			// });
 		});
 
 		st.addTrigger('Security 0=unsecured, 1=WEP, 2=WPA, 3=WPA2:', function(cb) {
@@ -720,65 +721,68 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 					security = 0;
 				}
 
-				return cb(security + '\n', startTimeout.bind(self, 10000));
+				//return cb(security + '\n', startTimeout.bind(self, 10000));
 			}
-
-			inquirer.prompt([{
-				type: 'list',
-				name: 'security',
-				message: 'Security Type',
-				choices: [
-					{ name: 'WPA2', value: 3 },
-					{ name: 'WPA', value: 2 },
-					{ name: 'WEP', value: 1 },
-					{ name: 'Unsecured', value: 0 }
-				]
-			}], function(ans) {
-				cb(ans.security + '\n', startTimeout.bind(self, 10000));
-			});
+			console.log('security: '+settings.wifi_security);
+			cb(settings.wifi_security + '\n', startTimeout.bind(self, 10000));
+			// inquirer.prompt([{
+			// 	type: 'list',
+			// 	name: 'security',
+			// 	message: 'Security Type',
+			// 	choices: [
+			// 		{ name: 'WPA2', value: 3 },
+			// 		{ name: 'WPA', value: 2 },
+			// 		{ name: 'WEP', value: 1 },
+			// 		{ name: 'Unsecured', value: 0 }
+			// 	]
+			// }], function(ans) {
+			// 	cb(ans.security + '\n', startTimeout.bind(self, 10000));
+			// });
 		});
 
-		st.addTrigger('Security Cipher 1=AES, 2=TKIP, 3=AES+TKIP:', function(cb) {
-			resetTimeout();
-			if (securityType !== undefined) {
-				var cipherType = 1;
-				if (securityType.indexOf('AES') >= 0 && securityType.indexOf('TKIP') >= 0) {
-					cipherType = 3;
-				} else if (securityType.indexOf('TKIP') >= 0) {
-					cipherType = 2;
-				} else if (securityType.indexOf('AES') >= 0) {
-					cipherType = 1;
-				}
+		// st.addTrigger('Security Cipher 1=AES, 2=TKIP, 3=AES+TKIP:', function(cb) {
+		// 	resetTimeout();
+		// 	if (securityType !== undefined) {
+		// 		var cipherType = 1;
+		// 		if (securityType.indexOf('AES') >= 0 && securityType.indexOf('TKIP') >= 0) {
+		// 			cipherType = 3;
+		// 		} else if (securityType.indexOf('TKIP') >= 0) {
+		// 			cipherType = 2;
+		// 		} else if (securityType.indexOf('AES') >= 0) {
+		// 			cipherType = 1;
+		// 		}
 
-				return cb(cipherType + '\n', startTimeout.bind(self, 5000));
-			}
+		// 		return cb(cipherType + '\n', startTimeout.bind(self, 5000));
+		// 	}
 
-			inquirer.prompt([{
-				type: 'list',
-				name: 'cipher',
-				message: 'Cipher Type',
-				choices: [
-					{ name: 'AES+TKIP', value: 3 },
-					{ name: 'TKIP', value: 2 },
-					{ name: 'AES', value: 1 }
-				]
-			}], function(ans) {
-				cb(ans.cipher + '\n', startTimeout.bind(self, 5000));
-			});
-		});
+		// 	inquirer.prompt([{
+		// 		type: 'list',
+		// 		name: 'cipher',
+		// 		message: 'Cipher Type',
+		// 		choices: [
+		// 			{ name: 'AES+TKIP', value: 3 },
+		// 			{ name: 'TKIP', value: 2 },
+		// 			{ name: 'AES', value: 1 }
+		// 		]
+		// 	}], function(ans) {
+		// 		cb(ans.cipher + '\n', startTimeout.bind(self, 5000));
+		// 	});
+		// });
 
 		st.addTrigger('Password:', function(cb) {
 			resetTimeout();
-			inquirer.prompt([{
-				type: 'input',
-				name: 'password',
-				message: 'Wi-Fi Password',
-				validate: function(val) {
-					return !!val;
-				}
-			}], function(ans) {
-				cb(ans.password + '\n', startTimeout.bind(self, 15000));
-			});
+			console.log('password: '+settings.wifi_password);
+			cb(settings.wifi_password + '\n', startTimeout.bind(self, 15000));
+			// inquirer.prompt([{
+			// 	type: 'input',
+			// 	name: 'password',
+			// 	message: 'Wi-Fi Password',
+			// 	validate: function(val) {
+			// 		return !!val;
+			// 	}
+			// }], function(ans) {
+			// 	cb(ans.password + '\n', startTimeout.bind(self, 15000));
+			// });
 		});
 
 		st.addTrigger('Spark <3 you!', function() {

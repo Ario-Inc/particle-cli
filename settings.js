@@ -214,6 +214,20 @@ settings.saveProfileData = function() {
 	fs.writeFileSync(proFile, JSON.stringify(settings.profile_json, null, 2), { mode: '600' });
 };
 
+
+settings.readWifiData = function() {
+	var particleDir = settings.ensureFolder();
+	var wifi = path.join(particleDir, 'wifi.json');      //proFile, get it?
+	if (fs.existsSync(wifi)) {
+		var data = JSON.parse(fs.readFileSync(wifi));
+
+		settings.wifi_ssid = (data) ? data.ssid : '';
+		settings.wifi_security = (data) ? data.security : '';
+		settings.wifi_password = (data) ? data.password : '';
+	}
+};
+
+
 // this is here instead of utilities to prevent a require-loop
 // when files that utilties requires need settings
 function matchKey(needle, obj, caseInsensitive) {
@@ -305,6 +319,7 @@ settings.transitionSparkProfiles = function() {
 
 settings.transitionSparkProfiles();
 settings.whichProfile();
+settings.readWifiData();
 settings.loadOverrides();
 
 module.exports = settings;
